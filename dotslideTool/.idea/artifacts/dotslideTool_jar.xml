@@ -1,0 +1,15 @@
+<component name="ArtifactManager">
+  <artifact build-on-make="true" name="dotslideTool:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/dotslideTool_jar</output-path>
+    <root id="root">
+      <element id="archive" name="dotslideTool.jar">
+        <element id="directory" name="META-INF">
+          <element id="file-copy" path="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" />
+        </element>
+        <element id="module-output" name="dotslideTool" />
+      </element>
+      <element id="library" level="application" name="grails-2.2.2" />
+      <element id="library" level="project" name="commons-cli-1.2" />
+    </root>
+  </artifact>
+</component>
