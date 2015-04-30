@@ -1,3 +1,4 @@
+package dotslide
 /*
  * Copyright (c) 2009-2015. Authors: see NOTICE file.
  *
@@ -86,8 +87,8 @@ public class Main {
         options.addOption("p", "path", true, "path (directory) with image dotslide");
 
         int nbLevels = -1;
-        String nameFilePath = null;
-        String nameFileInfo = null;
+        String absoluteFilePath = null;
+        String absoluteFilePathInfo = null;
         String nameFileCoordinates = null;
         String imagePath = null;
 
@@ -95,8 +96,8 @@ public class Main {
             CommandLine line = parser.parse( options, args );
 
             if(line.hasOption("filepath") && line.hasOption("fileinfo") && line.hasOption("path")) {
-                nameFilePath = line.getOptionValue("filepath");
-                nameFileInfo = line.getOptionValue("fileinfo");
+                absoluteFilePath = line.getOptionValue("filepath");
+                absoluteFilePathInfo = line.getOptionValue("fileinfo");
                 imagePath = line.getOptionValue("path");
             } else if (line.hasOption("filecoord") && line.hasOption("path")) {
                 nameFileCoordinates =  line.getOptionValue("filecoord");
@@ -126,7 +127,7 @@ public class Main {
             }
             if (filename.equals("ExtendedProps.xml")) {
                 //Creating file with all informations about the image
-                creatingTextInfo(imagePath, filename, nameFileInfo);
+                creatingTextInfo(imagePath, filename, absoluteFilePathInfo);
             }
         }
 
@@ -160,9 +161,9 @@ public class Main {
         int minX = coordinates.collect { it.xTotal }.min()
         int minY = coordinates.collect { it.yTotal }.min()
 
-        if (nameFilePath && nameFileInfo) {
+        if (absoluteFilePath && absoluteFilePathInfo) {
             try {
-                String addressFile = System.getProperty("user.dir") + "/"+nameFilePath+".txt";
+                String addressFile = absoluteFilePath+".txt";
                 //println addressFile
                 if (new File(addressFile).exists()) {
                     new File(addressFile).delete()
@@ -443,7 +444,7 @@ public class Main {
         return level;
     }
 
-    public static void creatingTextInfo(String imagePath, String nameFile, String nameFileInfo) {
+    public static void creatingTextInfo(String imagePath, String nameFile, String absoluteFilePathInfo) {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
         try {
@@ -451,7 +452,7 @@ public class Main {
             Document doc = db.parse(new File(imagePath + "/" +nameFile));
 
             Element root = doc.getDocumentElement();
-            String addressFile = System.getProperty("user.dir") + "/"+nameFileInfo+".txt";
+            String addressFile = absoluteFilePathInfo+".txt";
             try {
                 FileWriter fw = new FileWriter(addressFile, true);
                 BufferedWriter output = new BufferedWriter(fw);

@@ -1,3 +1,4 @@
+package dotslide
 /*
  * Copyright (c) 2009-2015. Authors: see NOTICE file.
  *
@@ -15,8 +16,6 @@
  */
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 
 /**
  * Created with IntelliJ IDEA.

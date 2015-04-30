@@ -1,3 +1,4 @@
+package dotslide
 /*
  * Copyright (c) 2009-2015. Authors: see NOTICE file.
  *
@@ -13,11 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-
 /**
  * Created with IntelliJ IDEA.
  * User: pierre ansen
