@@ -53,29 +53,6 @@ public class Main {
             ["DAH","DBH","DCH","DDH","DEH","DFH","DGH","DHH"]
     ];
 
-    /*static final String[][] level2 = [
-            ["BAA.jpg","BAB.jpg"],
-            ["BBA.jpg","BBB.jpg"]
-    ];
-
-    static final String[][] level3 = [
-            ["CAA.jpg","CAB.jpg","CAC.jpg","CAD.jpg"],
-            ["CBA.jpg","CBB.jpg","CBC.jpg","CBD.jpg"],
-            ["CCA.jpg","CCB.jpg","CCC.jpg","CCD.jpg"],
-            ["CDA.jpg","CDB.jpg","CDC.jpg","CDD.jpg"]
-    ];
-
-    static final String[][] level4 = [
-            ["DAA","DAB","DAC","DAD","DAE","DAF","DAG","DAH"],
-            ["DBA","DBB","DBC","DBD","DBE","DBF","DBG","DBH"],
-            ["DCA","DCB","DCC","DCD","DCE","DCF","DCG","DCH"],
-            ["DDA","DDB","DDC","DDD","DDE","DDF","DDG","DDH"],
-            ["DEA","DEB","DEC","DED","DEE","DEF","DEG","DEH"],
-            ["DFA","DFB","DFC","DFD","DFE","DFF","DFG","DFH"],
-            ["DGA","DGB","DGC","DGD","DGE","DGF","DGG","DGH"],
-            ["DHA","DHB","DHC","DHD","DHE","DHF","DHG","DHH"]
-    ];*/
-
     public static void main(String[] args) throws Exception {
         Options options = new Options();
         CommandLineParser parser = new BasicParser();
@@ -87,6 +64,7 @@ public class Main {
         options.addOption("p", "path", true, "path (directory) with image dotslide");
 
         int nbLevels = -1;
+        int tileSize = 1024
         String absoluteFilePath = null;
         String absoluteFilePathInfo = null;
         String nameFileCoordinates = null;
@@ -111,19 +89,14 @@ public class Main {
         } catch( ParseException exp ) { System.out.println( "Unexpected exception:" + exp.getMessage() ); }
 
         File imageDirectory = new File(imagePath);
-        /*ArrayList<String> tiles = new ArrayList<String>();
-        ArrayList<String> directories = new ArrayList<String>();*/
 
         for (String filename : imageDirectory.list()) {
-            //Add to list
-            /*if (filename.contains(".jpg"))
-                tiles.add(filename);
-            if (filename.contains("D"))
-                directories.add(filename);*/
 
             if (filename.equals("ImageProperties.xml")) {
                 //Seek number of level
-                nbLevels = seekLevel(imagePath, filename);
+                def infos = seekLevelAndTilesize(imagePath, filename);
+                nbLevels = infos.level
+                if(infos.tileSize) tileSize = infos.tileSize
             }
             if (filename.equals("ExtendedProps.xml")) {
                 //Creating file with all informations about the image
@@ -134,7 +107,7 @@ public class Main {
         assert(nbLevels != -1);
 
 
-        String[] concernedTiles = null
+        String[] concernedTiles;
         def concernedLevel = null
         if ( (nbLevels % 3) == 1) concernedLevel = level1
         if ( (nbLevels % 3) == 2) concernedLevel = level2
@@ -143,17 +116,11 @@ public class Main {
 
         concernedTiles = concernedLevel.flatten()
 
-        //println "concernedTiles $concernedTiles"
-
-        //System.out.println(nbLevels);
-
         int depthDirectories = (int) Math.floor((nbLevels - 1)/ 3)
 
         String[] tiles = getTilesAtMaximumLevel(imagePath, nbLevels, depthDirectories, concernedTiles)
 
-        //println tiles
-        def coordinates = computeCoordinatesUsingAlphabet(tiles, depthDirectories, concernedLevel, nbLevels)
-        //def coordinates = seekPosition(tiles)
+        def coordinates = computeCoordinatesUsingAlphabet(tiles, depthDirectories, concernedLevel, nbLevels, tileSize)
 
 
         //println coordinates
@@ -164,17 +131,14 @@ public class Main {
         if (absoluteFilePath && absoluteFilePathInfo) {
             try {
                 String addressFile = absoluteFilePath+".txt";
-                //println addressFile
                 if (new File(addressFile).exists()) {
                     new File(addressFile).delete()
                 }
                 FileWriter fw = new FileWriter(addressFile, true);
                 BufferedWriter output = new BufferedWriter(fw);
-                //coordinates.sort { map1, map2 -> map1.x <=> map2.x ?: map1.y <=> map2.y }
 
                 coordinates.each {
                     output.write((it.xTotal - minX) + ";" + (it.yTotal - minY) + ";" + imagePath + File.separator + it.tilePath + "\n");
-                    //output.write(it.x + ";" + it.y + ";" + imagePath + File.separator + it.tilePath + "\n");
                 }
 
                 output.flush();
@@ -198,125 +162,12 @@ public class Main {
             output.flush();
             output.close();
         }
-
-
-
-
-        //Launch Thread
-        /*try {
-
-
-            (new ThreadBoucle(tiles, directories, level, imagePath, nbLevels, nameFilePath)).start();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
     }
 
-    static def seekPosition(String[] paths) {
-        def coordinates = []
-        int tileSize = 1 //1024
-        paths.each { path ->
-            boolean running = true;
-            int[] x = new int[10];
-            int[] y = new int[10];
-            int xResult = 0;
-            int yResult = 0;
-            int z = 0;
-            int level;
-
-            //Look the position relative to the files in the path
-            String[] parts = path.split("/");
-            String filename
-            for(int i = 0; running; i++) {
-                if (!parts[i].endsWith("jpg")) {
-                    for(int j = 0; j < 8; j++) {
-                        for (int k = 0; k < 8; k++) {
-                            if (parts[i].equals(SynchronizedFileWriter.dotSlideDirectories[j][k])) {
-                                x[z] = j;
-                                y[z] = k;
-                                j = 7; k = 7;
-                            }
-                        }
-                    }
-                    z++;
-                }
-                if (parts[i].endsWith("jpg")){
-                    filename = parts[i]
-                    running = false;
-                }
-            }
-
-            //Calculating the coordinates X
-            level = 2 * z;
-            for(int r = 0 ; r < z; r++) {
-                int powLevel = (int) Math.pow(2,level);
-                xResult += (x[r]*tileSize) * powLevel;
-                level = level - 3;
-            }
-
-            //Calculating the coordinates Y
-            level = 2 * z;
-            for(int r = 0 ; r < z; r++) {
-                int powLevel = (int) Math.pow(2,level);
-                yResult += (y[r]*tileSize)*powLevel;
-                level = level - 3;
-            }
-
-            def lastLevelIndices = getValueIndicesFromArray(level3, filename)
-            xResult += (lastLevelIndices.i*tileSize);
-            yResult += (lastLevelIndices.j*tileSize);
-            //System.out.println("SeekPosition for " + path + ":" + xResult + "," + yResult + " and z : " + z);
-            coordinates << [x : xResult, y : yResult, path : path]
-            coordinates.sort {
-                it.x
-            }
-
-        }
-        return coordinates
-
-    }
-
-    static def computeCoordinates(String[] tilesPath, int depthDirectories,def concernedLevel, int nbLevels) {
+    static def computeCoordinatesUsingAlphabet(String[] tilesPath, int depthDirectories,def concernedLevel, int nbLevels, int tileSize) {
         def coordinates = []
         tilesPath.each { tilePath ->
-            //println "....tilePath $tilePath"
-            String[] tilePathSplit = tilePath.split(File.separator)
-            int x = 0
-            int y = 0
-            tilePathSplit.eachWithIndex { it, depth ->
-                if (!it.endsWith("jpg")) {
 
-
-                    def level4Indices = getValueIndicesFromArray(level4, it)
-                    assert(level4Indices != null)
-                    //println "$it [" + level4Indices + "]"
-                    x += level4Indices.i
-                    y += level4Indices.j
-
-                } else {
-                    def lastLevelIndices = getValueIndicesFromArray(concernedLevel, it)
-                    //println "$it [" + lastLevelIndices + "]"
-                    x += lastLevelIndices.i
-                    y += lastLevelIndices.j
-
-                }
-
-            }
-            def res = [x : x, y : y, tilePath : tilePath ]
-            //println "=> $res"
-            coordinates << res
-        }
-        coordinates
-    }
-
-    static def computeCoordinatesUsingAlphabet(String[] tilesPath, int depthDirectories,def concernedLevel, int nbLevels) {
-        //println "depthDirectories $depthDirectories"
-        def coordinates = []
-        int tileSize = 1024
-        tilesPath.each { tilePath ->
-
-            //println "....tilePath $tilePath"
             String[] tilePathSplit = tilePath.split(File.separator)
             def x = []
             def y = []
@@ -327,7 +178,6 @@ public class Main {
                     y << ij.j
                 } else {
                     def ij = getValueIndicesFromArray(concernedLevel, it)
-
                     x << ij.i
                     y << ij.j
                 }
@@ -346,7 +196,7 @@ public class Main {
                     xTotal += _v * tileSize
 
                 }
-                else if (i >= 1) {
+                else {
                     xTotal += _v * tileSize * Math.pow(2, zoom + ((i-1) * 3))
                 }
             }
@@ -355,7 +205,7 @@ public class Main {
                     yTotal += _v * tileSize
 
                 }
-                else if (i >= 1) {
+                else {
                     yTotal += _v * tileSize * Math.pow(2, zoom + ((i-1) * 3))
                 }
             }
@@ -364,28 +214,25 @@ public class Main {
             coordinates << res
         }
 
+        coordinates = coordinates.sort{map1, map2 -> map1.xTotal <=> map2.xTotal ?: map1.yTotal <=> map2.yTotal}
+
         return coordinates
     }
 
 
 
     static def getValueIndicesFromArray(array, String value) {
-        //println "Look for $value in $array"
-        def indices = null
-        array.eachWithIndex { row, i ->
-            row.eachWithIndex { arrayValue, j ->
-                //println "$arrayValue vs $value"
-                if (arrayValue == value) {
-                    indices = [ i : i, j : j]
-                }
-            }
-        }
+
+        def alphabet = ('A'..'Z')
+
+        def indices = [ i : alphabet.indexOf(value[2]) , j : alphabet.indexOf(value[1])]
+
         return indices
     }
 
+
+
     public static String[] getTilesAtMaximumLevel(String imagePath, int nbLevels, int depthDirectories, String[] concernedTiles) {
-
-
 
         //println "numberOfSubLevels $depthDirectories $imagePath"
         def level4Flat = level4.flatten()
@@ -414,8 +261,10 @@ public class Main {
         return tiles
     }
 
-    public static int seekLevel(String imagePath, String nameFile) {
+    public static def seekLevelAndTilesize(String imagePath, String nameFile) {
         int level = 0;
+        int tileSize = 0;
+
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 
         try {
@@ -435,13 +284,15 @@ public class Main {
             for (Element test : result) {
                 if (test.getAttribute("levels") != null)
                     level = Integer.parseInt(test.getAttribute("levels"));
+                if (test.getAttribute("tilesize") != null)
+                    tileSize = Integer.parseInt(test.getAttribute("tilesize"));
             }
         }
         catch (ParserConfigurationException e) { System.out.println("Error configuration parser ..." + e.getMessage()); }
         catch (SAXException e) { System.out.println("Error SAX : " + e.getMessage()); }
         catch (IOException e) { System.out.println("Error I/O : " + e.getMessage()); }
 
-        return level;
+        return ["level" : level, "tileSize":tileSize];
     }
 
     public static void creatingTextInfo(String imagePath, String nameFile, String absoluteFilePathInfo) {
